@@ -1,2 +1,15 @@
-# yangfan16.github.io-
-青梅的博客
+# 青梅的博客
+
+## 博客组成
+
+博客使用Hexo搭建静态博客，主题使用静态的NexT主题，自己稍作修改，使之更加符合自己的使用习惯。
+
+项目托管在github上  theme下面的NexT自己Fork原作者的加以修改，并在本项目中使用git submodule 引入
+
+## 访问地址
+
+https://blog.yangfan16.cn
+
+## 编译方式
+
+博客页面使用 Hexo 生成，由 Github Actions 自动编译更新。
