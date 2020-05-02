@@ -39,6 +39,49 @@
       </tags>
   </entry>
   <entry>
+    <title>美国十年签证申请总结</title>
+    <url>/others/brew-remote/</url>
+    <content><![CDATA[<blockquote>
+<p>homewbrew最为OS X的利器，给软件的安装个更新带来了极大的便利，然而国内特殊的环境常常使得其下载更新速度极慢；我在之前切换使用阿里的镜像源，倒是便利了不少，最近发现阿里的镜像源不知道为何无法使用，又重置为默认源，谨做记录，以为后用。</p>
+</blockquote>
+<hr>
+<p>如果你没有更换过镜像源，执行 brew 命令安装应用的时候，跟以下 3 个仓库地址有关：</p>
+<ul>
+<li>brew.git</li>
+<li>homebrew-core.git</li>
+<li>homebrew-bottles</li>
+</ul>
+<h2 id="更换国内镜像源"><a href="#更换国内镜像源" class="headerlink" title="更换国内镜像源"></a>更换国内镜像源</h2><p>通过以下操作将这 3 个仓库地址全部替换为 阿里云/清华源/中科大源 提供的地址就可以使用国内的镜像源</p>
+<h3 id="更换brew-git"><a href="#更换brew-git" class="headerlink" title="更换brew.git"></a>更换brew.git</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &quot;$(brew --repo)&quot;</span><br><span class="line"># 阿里云源镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;homebrew&#x2F;brew.git</span><br><span class="line"># 清华镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.tuna.tsinghua.edu.cn&#x2F;git&#x2F;homebrew&#x2F;brew.git</span><br><span class="line"># 中科大镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.ustc.edu.cn&#x2F;brew.git</span><br></pre></td></tr></table></figure>
+
+<h3 id="更换homebrew-core-git"><a href="#更换homebrew-core-git" class="headerlink" title="更换homebrew-core.git"></a>更换homebrew-core.git</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &quot;$(brew --repo)&#x2F;Library&#x2F;Taps&#x2F;homebrew&#x2F;homebrew-core&quot;</span><br><span class="line"># 阿里云源镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;homebrew&#x2F;homebrew-core.git</span><br><span class="line"># 清华镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.tuna.tsinghua.edu.cn&#x2F;git&#x2F;homebrew&#x2F;homebrew-core.git</span><br><span class="line"># 中科大镜像</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;mirrors.ustc.edu.cn&#x2F;homebrew-core.git</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>执行上述命令之后，请执行 brew update 命令</p>
+</blockquote>
+<p>可以执行 brew config 命令，查看配置信息</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">HOMEBREW_VERSION: 2.2.14-54-g3247f26</span><br><span class="line">ORIGIN: https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;homebrew&#x2F;brew.git</span><br><span class="line">HEAD: 3247f26a3416284cabfe0dcc28cbe05e466f622a</span><br><span class="line">Last commit: 21 minutes ago</span><br><span class="line">Core tap ORIGIN: https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;homebrew&#x2F;homebrew-core.git</span><br><span class="line">Core tap HEAD: 0d5644a597db138f3c891252bbc73eb21f720b74</span><br><span class="line">Core tap last commit: 43 minutes ago</span><br><span class="line">HOMEBREW_PREFIX: &#x2F;usr&#x2F;local</span><br><span class="line">HOMEBREW_MAKE_JOBS: 4</span><br><span class="line">CPU: quad-core 64-bit skylake</span><br><span class="line">Homebrew Ruby: 2.6.3 &#x3D;&gt;         &#x2F;System&#x2F;Library&#x2F;Frameworks&#x2F;Ruby.framework&#x2F;Versions&#x2F;2.6&#x2F;usr&#x2F;bin&#x2F;ruby</span><br><span class="line">Clang: 11.0 build 1103</span><br><span class="line">Git: 2.24.2 &#x3D;&gt; &#x2F;Applications&#x2F;Xcode.app&#x2F;Contents&#x2F;Developer&#x2F;usr&#x2F;bin&#x2F;git</span><br><span class="line">Curl: 7.64.1 &#x3D;&gt; &#x2F;usr&#x2F;bin&#x2F;curl</span><br><span class="line">macOS: 10.15.4-x86_64</span><br><span class="line">CLT: 11.4.1.0.1.1586360307</span><br><span class="line">Xcode: 11.4.1</span><br></pre></td></tr></table></figure>
+
+<h3 id="更换-homebrew-bottles"><a href="#更换-homebrew-bottles" class="headerlink" title="更换 homebrew-bottles"></a>更换 homebrew-bottles</h3><p>我用的oh-my-zsh, 可以用命令<code>echo $SHELL</code> 查看自己的SHELL, 直接在<code>$HOME/.zshrc</code>文件里面增加内容或者直接在终端中运行命令即可</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">echo &#39;export HOMEBREW_BOTTLE_DOMAIN&#x3D;https:&#x2F;&#x2F;mirrors.aliyun.com&#x2F;homebrew&#x2F;homebrew-bottles&#39; &gt;&gt; ~&#x2F;.zshrc</span><br><span class="line"></span><br><span class="line">source ~&#x2F;.zshrc</span><br></pre></td></tr></table></figure>
+
+<p>bash 用户直接在<code>$HOME/.bash_profile</code> 文件中增加相同的内容即可。</p>
+<h2 id="重置homebrew源"><a href="#重置homebrew源" class="headerlink" title="重置homebrew源"></a>重置homebrew源</h2><p>最近国内的镜像似乎并不是很好使，一大堆的404，很多也不能正常下载，我又换回使用默认的源。</p>
+<h3 id="重置-brew-git"><a href="#重置-brew-git" class="headerlink" title="重置 brew.git"></a>重置 brew.git</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &quot;$(brew --repo)&quot;</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;github.com&#x2F;Homebrew&#x2F;brew.git</span><br></pre></td></tr></table></figure>
+
+<h3 id="重置-homebrew-core-git"><a href="#重置-homebrew-core-git" class="headerlink" title="重置 homebrew-core.git"></a>重置 homebrew-core.git</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd &quot;$(brew --repo)&#x2F;Library&#x2F;Taps&#x2F;homebrew&#x2F;homebrew-core&quot;</span><br><span class="line">git remote set-url origin https:&#x2F;&#x2F;github.com&#x2F;Homebrew&#x2F;homebrew-core.git</span><br></pre></td></tr></table></figure>
+
+<h3 id="重置-homebrew-bottles"><a href="#重置-homebrew-bottles" class="headerlink" title="重置 homebrew-bottles"></a>重置 homebrew-bottles</h3><p>注释掉<code>$HOME/.zshrc</code>配置文件(zsh用户)或者<code>$HOME/.bash_profile</code>配置文件(bash用户)里的有关Homebrew Bottles即可恢复官方源。 重启bash或让bash重读配置文件。 可以再次运行<code>brew config</code>查看。</p>
+<h2 id="brew-cask"><a href="#brew-cask" class="headerlink" title="brew cask"></a>brew cask</h2><p>我并不使用brew cash，不过中科大的镜像里面提供了brew cask的镜像，方法与其他的并没有什么两样。重置也是使用恢复默认的github源即可。</p>
+]]></content>
+      <categories>
+        <category>others</category>
+      </categories>
+      <tags>
+        <tag>others</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>端午上海苏州游记</title>
     <url>/travel/travel-sh-note/</url>
     <content><![CDATA[<blockquote>
