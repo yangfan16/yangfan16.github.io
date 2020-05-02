@@ -39,12 +39,13 @@
       </tags>
   </entry>
   <entry>
-    <title>美国十年签证申请总结</title>
+    <title>更换和重置Mac Homebrew的默认源</title>
     <url>/others/brew-remote/</url>
     <content><![CDATA[<blockquote>
 <p>homewbrew最为OS X的利器，给软件的安装个更新带来了极大的便利，然而国内特殊的环境常常使得其下载更新速度极慢；我在之前切换使用阿里的镜像源，倒是便利了不少，最近发现阿里的镜像源不知道为何无法使用，又重置为默认源，谨做记录，以为后用。</p>
 </blockquote>
-<hr>
+<a id="more"></a>
+
 <p>如果你没有更换过镜像源，执行 brew 命令安装应用的时候，跟以下 3 个仓库地址有关：</p>
 <ul>
 <li>brew.git</li>
