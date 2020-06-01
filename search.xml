@@ -307,6 +307,8 @@
     <content><![CDATA[<blockquote>
 <p>准备认真练习算法题目，个人使用Go语言进行练习，这是算法系列文章的第一篇。</p>
 </blockquote>
+<a id="more"></a>
+
 <h2 id="LeetCode-数组专项训练"><a href="#LeetCode-数组专项训练" class="headerlink" title="LeetCode 数组专项训练"></a>LeetCode 数组专项训练</h2><h3 id="移动零-283"><a href="#移动零-283" class="headerlink" title="移动零 #283"></a><a href="https://leetcode-cn.com/problems/move-zeroes/" target="_blank" rel="noopener">移动零 #283</a></h3><hr>
 <blockquote>
 <p>给定一个数组 nums，编写一个函数将所有 0 移动到数组的末尾，同时保持非零元素的相对顺序。</p>
