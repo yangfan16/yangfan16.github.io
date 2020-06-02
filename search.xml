@@ -412,7 +412,123 @@
       </tags>
   </entry>
   <entry>
-    <title>深入理解Go语言数组和切片</title>
+    <title>理解Go语言的哈希表</title>
+    <url>/go/go-map/</url>
+    <content><![CDATA[<blockquote>
+<p>哈希表是除了数组之外最常用的数据结构，几乎任何语言都有数组和哈希表这两个集合的实现，有些语言(比如<code>Python</code>) 将哈希表称之为字典，将数组称之为列表。但是它们是两种设计集合元素的思路，数组用于表示元素的序列，而哈希表示的是键值对之间映射关系，只是不同语言的叫法和实现稍微有些不同。Go语言中数组更常用到的是切片<code>slice</code>,哈希表则是<code>map</code></p>
+</blockquote>
+<a id="more"></a>
+
+<h2 id="设计原理"><a href="#设计原理" class="headerlink" title="设计原理"></a>设计原理</h2><p>哈希表的常用不仅因为它 <code>O(1)</code> 的读写性能非常优秀，还因为它提供了键值之间的映射。想要实现一个性能优异的哈希表，需要注意两个关键点 —— 哈希函数和冲突解决方法。</p>
+<h3 id="哈希函数"><a href="#哈希函数" class="headerlink" title="哈希函数"></a>哈希函数</h3><p>哈希函数可以把给定的数据转换成固定长度的无规律数值。转换后的无规律数值可以作为 数据摘要应用于各种各样的场景；可以将哈希函数想像成搅拌机,可以总结出哈希函数的以下特点：</p>
+<ol>
+<li>输出的哈希值数据长度不变,与输入数据的长度大小无关；</li>
+<li>若输入的数据相同，不管计算多少次，输出的结果一定一致；</li>
+<li>即使输入的数据相似， 但哪怕它们只有一比特的差别， 那么输出的哈希值也会 有很大的差异；</li>
+<li>即使输入的两个数据完全不同，输出的哈希值也有可能是相同的(即哈希冲突)；</li>
+<li>不太可能从哈希值反向推算出原本的数据</li>
+<li>求哈希值的计算要相对容易</li>
+</ol>
+<p><img data-src="evernotecid://12F4696D-A931-47AB-BBEB-8BF6431E1DDA/appyinxiangcom/22258662/ENResource/p22" alt="5d965c890d5586146dda72be407a8ab0.png"></p>
+<p>哈希函数的选择在很大程度上能够决定哈希表的读写性能，在理想情况下，哈希函数应该能够将不同键映射到不同的索引上，这要求<strong>哈希函数输出范围大于输入范围</strong>，但是由于键的数量会远远大于映射的范围，所以在实际使用时，这个理想的结果是不可能实现的。</p>
+<p>比较实际的方式是让<strong>哈希函数的结果能够尽可能的均匀分布</strong>，然后通过工程上的手段解决哈希冲突的问题，但是<strong>哈希的结果一定要尽可能均匀</strong>，结果不均匀的哈希函数会造成更多的冲突并导致更差的读写性能。</p>
+<p>在一个使用结果较为均匀的哈希函数中，哈希的增删改查都需要 O(1) 的时间复杂度，但是非常不均匀的哈希函数会导致所有的操作都会占用最差 O(n) 的复杂度，所以在哈希表中使用好的哈希函数是至关重要的。</p>
+<h3 id="哈希冲突解决"><a href="#哈希冲突解决" class="headerlink" title="哈希冲突解决"></a>哈希冲突解决</h3><p>在通常情况下，哈希函数输入的范围一定会远远大于输出的范围，所以在使用哈希表时一定会遇到冲突，哪怕我们使用了完美的哈希函数，当输入的键足够多最终也会造成冲突；然而我们的哈希函数往往都是不完美的，输出的范围是有限的，所以一定会发生哈希碰撞，这时就需要一些方法来解决哈希碰撞的问题，常见方法的就是开放寻址法和拉链法。</p>
+<h4 id="开放寻址法"><a href="#开放寻址法" class="headerlink" title="开放寻址法"></a>开放寻址法</h4><p>开放寻址法的核心思想是<strong>对数组中的元素依次探测和比较以判断目标键值对是否存在于哈希表中</strong>，如果我们使用开放寻址法来实现哈希表，那么在支撑哈希表的数据结构就是数组，不过因为数组的长度有限。<br>我们将每个人的性别作为数 据进行存储，键为人名，值为对应的性别。当我们向当前哈希表写入新的数据时发生了冲突，就会将键值对写入到下一个不为空的位置.</p>
+<p>开放寻址法首先计算出元素的直接哈希地址 <code>H ( key )</code> ，如果该存储单元已被其他元素占用，则继续查看地址为 <code>H ( key ) + d 2</code> 的存储单元，如此重复直至找到某个存储单元为空时，将关键字为 <code>key</code> 的数据元素存放到该单元。 </p>
+<p>增量 <code>d</code> 可以有不同的取法，并根据其取法有不同的称呼：</p>
+<ol>
+<li>di ＝ 1 ， 2 ， 3 ， …… 线性探测再哈希；</li>
+<li>di ＝ 1^2 ，－ 1^2 ， 2^2 ，－ 2^2 ， k^2， -k^2…… 二次探测再哈希；</li>
+<li>di ＝ 伪随机序列 伪随机再散列； </li>
+</ol>
+<p>开放寻址法中对性能影响最大的就是<code>装载因子</code>，它是数组中元素的数量与数组大小的比值，随着装载因子的增加，线性探测的平均用时就会逐渐增加，这会同时影响哈希表的读写性能，当装载率超过 70% 之后，哈希表的性能就会急剧下降，而一旦装载率达到 100%，整个哈希表就会完全失效，这时查找任意元素都需要遍历数组中全部的元素，所以在实现哈希表时一定要时刻关注装载因子的变化。</p>
+<h4 id="拉链法"><a href="#拉链法" class="headerlink" title="拉链法"></a>拉链法</h4><p>拉链法是哈希表中最常见的实现方法，大多数的编程语言都用拉链法实现哈希表，它的实现比较开放地址法稍微复杂一些，但是平均查找的长度也比较短，各个用于存储节点的内存都是动态申请的，可以节省比较多的存储空间。</p>
+<p>实现拉链法一般会使用数组加上链表，不过有一些语言会在拉链法的哈希中引入红黑树以优化性能，拉链法会使用链表数组作为哈希底层的数据结构，我们可以将它看成一个可以扩展的『二维数组』：</p>
+<p><img data-src="evernotecid://12F4696D-A931-47AB-BBEB-8BF6431E1DDA/appyinxiangcom/22258662/ENResource/p26" alt="2a4b4cfd1e9be8f66cac6b14de3c2197.png"></p>
+<p>如上图所示，当需要将某个键值对写入哈希表中的时候，先对键经历一个哈希过程，就是搅拌机的搅拌过程，这个会帮我们选择一个桶，和开放地址法一样，选择桶的方式就是直接对哈希返回的结果取模：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">index := hash(<span class="string">"Ally"</span>) % array.<span class="built_in">len</span></span><br></pre></td></tr></table></figure>
+
+<p>选择了 3 号桶之后就可以遍历当前桶中的链表了，在遍历链表的过程中会遇到以下两种情况:</p>
+<ol>
+<li>找到键相同的键值对 —— 更新键对应的值；</li>
+<li>没有找到键相同的键值对 —— 在链表的末尾追加新键值对；</li>
+</ol>
+<p>当读取数据的时候，先找到桶的标号，然后依次遍历桶中的链表(有些是红黑树)，如果遍历到链表的末尾也没有找到期望的键，那就返回空。</p>
+<p>在一个性能比较好的哈希表中，每一个桶中都应该有 0<del>1 个元素，有时会有 2</del>3 个，很少会超过这个数量，计算哈希、定位桶和遍历链表三个过程是哈希表读写操作的主要开销，使用拉链法实现的哈希也有装载因子这一概念：</p>
+<blockquote>
+<p>装载因子 := 元素数量 / 桶数量</p>
+</blockquote>
+<p>拉链法的装载因子越大，哈希的读写性能就越差，在一般情况下使用拉链法的哈希表装载因子都不会超过 1，当哈希表的装载因子较大时就会触发哈希的扩容，创建更多的桶来存储哈希中的元素，保证性能不会出现严重的下降。</p>
+<h2 id="Go语言哈希表"><a href="#Go语言哈希表" class="headerlink" title="Go语言哈希表"></a>Go语言哈希表</h2><p><code>Go</code> 语言运行时同时使用了多个数据结构组合表示哈希表，其中使用 <code>hmap</code> 结构体来表示哈希，看一下这个结构体内部的字段：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">type hmap struct &#123;</span><br><span class="line">	count     int</span><br><span class="line">	flags     uint8</span><br><span class="line">	B         uint8</span><br><span class="line">	noverflow uint16</span><br><span class="line">	hash0     uint32</span><br><span class="line"></span><br><span class="line">	buckets    unsafe.Pointer</span><br><span class="line">	oldbuckets unsafe.Pointer</span><br><span class="line">	nevacuate  uintptr</span><br><span class="line"></span><br><span class="line">	extra *mapextra</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><code>count</code> 表示当前哈希表中的元素数量；</li>
+<li><code>B</code> 表示当前哈希表持有的 <code>buckets</code> 数量，但是因为哈希表中桶的数量都 2 的倍数，所以该字段会存储对数，也就是 <code>len(buckets) == 2^B</code>；</li>
+<li><code>hash0</code> 是哈希的种子，它能为哈希函数的结果引入随机性，这个值在创建哈希表时确定，并在调用哈希函数时作为参数传入；</li>
+<li><code>oldbuckets</code> 是哈希在扩容时用于保存之前 <code>buckets</code> 的字段，它的大小是当前 <code>buckets</code> 的一半；</li>
+</ol>
+<p><img data-src="evernotecid://12F4696D-A931-47AB-BBEB-8BF6431E1DDA/appyinxiangcom/22258662/ENNote/p23?hash=ed2701bc8291c06642a6dcae3dc54ea9" alt="ed2701bc8291c06642a6dcae3dc54ea9.png"></p>
+<p>如上图所示哈希表 <code>hmap</code> 的桶就是 <code>bmap</code>，每一个 <code>bmap</code> 都能存储 8 个键值对，当哈希表中存储的数据过多，单个桶无法装满时就会使用 <code>extra.overflow</code> 中桶存储溢出的数据。上述两种不同的桶在内存中是连续存储的，我们在这里将它们分别称为正常桶和溢出桶，上图中黄色的 <code>bmap</code> 就是正常桶，绿色的 <code>bmap</code> 是溢出桶，溢出桶是在 <code>Go</code> 语言还使用 <code>C</code> 语言实现时就使用的设计3，由于它能够减少扩容的频率所以一直使用至今。</p>
+<p><code>bmap</code>的定义在<code>Go</code>语言的源码中如下：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="keyword">type</span> bmap <span class="keyword">struct</span> &#123;</span><br><span class="line">	topbits  [<span class="number">8</span>]<span class="keyword">uint8</span></span><br><span class="line">    keys     [<span class="number">8</span>]keytype</span><br><span class="line">    values   [<span class="number">8</span>]valuetype</span><br><span class="line">    pad      <span class="keyword">uintptr</span></span><br><span class="line">    overflow <span class="keyword">uintptr</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个<code>topbits</code>存储了键的哈希的高 8 位，通过比较不同键的哈希的高 8 位可以减少访问键值对次数以提高性能。</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p><code>Go</code>语言可以通过字面量或者<code>map</code>关键字在运行时来初始化哈希表，我们分开来说。</p>
+<h4 id="使用字面量"><a href="#使用字面量" class="headerlink" title="使用字面量"></a>使用字面量</h4><figure class="highlight go"><table><tr><td class="code"><pre><span class="line">hash := <span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>&#123;</span><br><span class="line">	<span class="string">"name"</span>: <span class="string">"青梅"</span>,</span><br><span class="line">	<span class="string">"age"</span>: ”<span class="number">20</span><span class="string">",</span></span><br><span class="line"><span class="string">	"</span>gender<span class="string">": "</span>male<span class="string">"</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>在初始化哈希时需要声明键值对的类型，这种使用字面量初始化的方式最终都会通过<code>cmd/compile/internal/gc/sinit.go</code>文件中的<code>maplit</code>函数进行初始化，</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">maplit</span><span class="params">(n *Node, m *Node, init *Nodes)</span></span> &#123;</span><br><span class="line">	a := nod(OMAKE, <span class="literal">nil</span>, <span class="literal">nil</span>)</span><br><span class="line">	a.Esc = n.Esc</span><br><span class="line">	a.List.Set2(typenod(n.Type), nodintconst(<span class="keyword">int64</span>(n.List.Len())))</span><br><span class="line">	litas(m, a, init)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> stat, dyn []*Node</span><br><span class="line">	<span class="keyword">for</span> _, r := <span class="keyword">range</span> n.List.Slice() &#123;</span><br><span class="line">		stat = <span class="built_in">append</span>(stat, r)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(stat) &gt; <span class="number">25</span> &#123;</span><br><span class="line">		...</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		addMapEntries(m, stat, init)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当哈希表中的元素数量少于或者等于 25 个时，编译器会直接调用 <code>addMapEntries</code> 将字面量初始化的结构体转换成以下的代码，将所有的键值对一次加入到哈希表中，这种方式像极了数组和切片的初始化方式，</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">hash := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">string</span>, <span class="number">3</span>)</span><br><span class="line">hash[<span class="string">"name"</span>] = “青梅”</span><br><span class="line">hash[<span class="string">"age"</span>] = <span class="string">"20"</span></span><br><span class="line">hash[<span class="string">"gender"</span>] = <span class="string">"male"</span></span><br></pre></td></tr></table></figure>
+
+<p>一旦超过25个，会在编译期间创建两个数组分别存储键和值的信息，这些键值对会通过一个如下所示的 for 循环加入目标的哈希：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">hash := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]<span class="keyword">int</span>, <span class="number">26</span>)</span><br><span class="line">vstatk := []<span class="keyword">string</span>&#123;<span class="string">"A"</span>, <span class="string">"B"</span>, <span class="string">"C"</span>, ... ， <span class="string">"Z"</span>&#125;</span><br><span class="line">vstatv := []<span class="keyword">int</span>&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, ... , <span class="number">26</span>&#125;</span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(vstak); i++ &#123;</span><br><span class="line">    hash[vstatk[i]] = vstatv[i]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的两个切片还会被进一步展开初始化，在数组和切片系列文章已经分析过了，就不再赘述。不过可以看到，无论hash中的元素数目比25个多还是少，在哈希表的初始化都是使用的<code>make</code>关键字进行初始化的。</p>
+<h4 id="使用make关键字"><a href="#使用make关键字" class="headerlink" title="使用make关键字"></a>使用make关键字</h4><p>使用 <code>make</code> 创建哈希，<code>Go</code> 语言编译器会在类型检查期间将它们转换成对 <code>runtime.makemap</code> 的调用，使用字面量来初始化哈希也只是语言提供的辅助工具，最后调用的都是 <code>runtime.makemap</code>：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">unc makemap(t *maptype, hint <span class="keyword">int</span>, h *hmap) *hmap &#123;</span><br><span class="line">	mem, overflow := math.MulUintptr(<span class="keyword">uintptr</span>(hint), t.bucket.size)</span><br><span class="line">	<span class="keyword">if</span> overflow || mem &gt; maxAlloc &#123;</span><br><span class="line">		hint = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// initialize Hmap</span></span><br><span class="line">	<span class="keyword">if</span> h == <span class="literal">nil</span> &#123;</span><br><span class="line">		h = <span class="built_in">new</span>(hmap)</span><br><span class="line">	&#125;</span><br><span class="line">	h.hash0 = fastrand()</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Find the size parameter B which will hold the requested # of elements.</span></span><br><span class="line">	<span class="comment">// For hint &lt; 0 overLoadFactor returns false since hint &lt; bucketCnt.</span></span><br><span class="line">	B := <span class="keyword">uint8</span>(<span class="number">0</span>)</span><br><span class="line">	<span class="keyword">for</span> overLoadFactor(hint, B) &#123;</span><br><span class="line">		B++</span><br><span class="line">	&#125;</span><br><span class="line">	h.B = B</span><br><span class="line"></span><br><span class="line">	<span class="comment">// allocate initial hash table</span></span><br><span class="line">	<span class="comment">// if B == 0, the buckets field is allocated lazily later (in mapassign)</span></span><br><span class="line">	<span class="comment">// If hint is large zeroing this memory could take a while.</span></span><br><span class="line">	<span class="keyword">if</span> h.B != <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">var</span> nextOverflow *bmap</span><br><span class="line">		h.buckets, nextOverflow = makeBucketArray(t, h.B, <span class="literal">nil</span>)</span><br><span class="line">		<span class="keyword">if</span> nextOverflow != <span class="literal">nil</span> &#123;</span><br><span class="line">			h.extra = <span class="built_in">new</span>(mapextra)</span><br><span class="line">			h.extra.nextOverflow = nextOverflow</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> h</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数的执行过程会分成以下几个部分：</p>
+<ol>
+<li>计算哈希占用的内存是否溢出或者超出能分配的最大值；</li>
+<li>调用 fastrand 获取一个随机的哈希种子；</li>
+<li>根据传入的 hint 计算出需要的最小需要的桶的数量；</li>
+<li>使用 runtime.makeBucketArray 创建用于保存桶的数组；</li>
+</ol>
+<p><code>makeBucketArray</code> 函数会根据传入的 <code>B</code> 计算出的需要创建的桶数量在内存中分配一片连续的空间用于存储数据：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">makeBucketArray</span><span class="params">(t *maptype, b <span class="keyword">uint8</span>, dirtyalloc unsafe.Pointer)</span> <span class="params">(buckets unsafe.Pointer, nextOverflow *bmap)</span></span> &#123;</span><br><span class="line">	base := bucketShift(b)</span><br><span class="line">	nbuckets := base</span><br><span class="line">	<span class="comment">// For small b, overflow buckets are unlikely.</span></span><br><span class="line">	<span class="comment">// Avoid the overhead of the calculation.</span></span><br><span class="line">	<span class="keyword">if</span> b &gt;= <span class="number">4</span> &#123;</span><br><span class="line">		<span class="comment">// Add on the estimated number of overflow buckets</span></span><br><span class="line">		<span class="comment">// required to insert the median number of elements</span></span><br><span class="line">		<span class="comment">// used with this value of b.</span></span><br><span class="line">		nbuckets += bucketShift(b - <span class="number">4</span>)</span><br><span class="line">		sz := t.bucket.size * nbuckets</span><br><span class="line">		up := roundupsize(sz)</span><br><span class="line">		<span class="keyword">if</span> up != sz &#123;</span><br><span class="line">			nbuckets = up / t.bucket.size</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当桶的数量小于 <code>2^4</code> 时，由于数据较少、使用溢出桶的可能性较低，这时就会省略创建的过程以减少额外开销；当桶的数量多于 <code>2^4</code> 时，就会额外创建 <code>2^𝐵−4</code> 个溢出桶，在正常情况下，正常桶和溢出桶在内存中的存储空间是连续的，只是被 <code>hmap</code> 中的不同字段引用，当溢出桶数量较多时会通过 <code>runtime.newobject</code> 创建新的溢出桶。</p>
+<h3 id="读写操作"><a href="#读写操作" class="headerlink" title="读写操作"></a>读写操作</h3><figure class="highlight go"><table><tr><td class="code"><pre><span class="line">val := hash[key]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> key, val :=  <span class="keyword">range</span> hash &#123;</span><br><span class="line">    <span class="comment">// k, v</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这两种方式虽然都能读取哈希表中的数据，但是使用的函数和底层的原理完全不同，前者需要知道哈希的键并且一次只能获取单个键对应的值，而后者可以遍历哈希中的全部键值对，访问数据时也不需要预先知道哈希的键。</p>
+<p><code>Go</code>语言还提供了一个内置的<code>delete</code>函数来删除哈希表中的元素</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hash[key] &#x3D; value</span><br><span class="line">hash[key] &#x3D; newValue</span><br><span class="line">delete(hash, key)</span><br></pre></td></tr></table></figure>
+
+<h4 id="根据键访问"><a href="#根据键访问" class="headerlink" title="根据键访问"></a>根据键访问</h4><p>在编译的类型检查期间，<code>hash[key]</code> 以及类似的操作都会被转换成对哈希的 <code>OINDEXMAP</code> 操作，中间代码生成阶段会在 <code>cmd/compile/internal/gc/walk.go</code>文件中的<code>walkexpr</code>函数中将这些 <code>OINDEXMAP</code> 操作转换成如下的代码：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line">v     := hash[key] <span class="comment">// =&gt; v     := *mapaccess1(maptype, hash, &amp;key)</span></span><br><span class="line">v, ok := hash[key] <span class="comment">// =&gt; v, ok := mapaccess2(maptype, hash, &amp;key)</span></span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>接受参数仅为一个时，会使用 <code>runtime.mapaccess1</code>，该函数仅会返回一个指向目标值的指针；</li>
+<li>接受两个参数时，会使用 <code>runtime.mapaccess2</code>，除了返回目标值之外，它还会返回一个用于表示当前键对应的值是否存在的布尔值：</li>
+</ol>
+<p><code>mapaccess1</code> 函数会先通过哈希表设置的哈希函数、种子获取当前键对应的哈希，再通过 <code>bucketMask</code> 和 <code>add</code> 函数拿到该键值对所在的桶序号和哈希最上面的 8 位数字。</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapaccess1</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line">	alg := t.key.alg</span><br><span class="line">	hash := alg.hash(key, <span class="keyword">uintptr</span>(h.hash0))</span><br><span class="line">	m := bucketMask(h.B)</span><br><span class="line">	b := (*bmap)(add(h.buckets, (hash&amp;m)*<span class="keyword">uintptr</span>(t.bucketsize)))</span><br><span class="line">	top := tophash(hash)</span><br><span class="line">bucketloop:</span><br><span class="line">	<span class="keyword">for</span> ; b != <span class="literal">nil</span>; b = b.overflow(t) &#123;</span><br><span class="line">		<span class="keyword">for</span> i := <span class="keyword">uintptr</span>(<span class="number">0</span>); i &lt; bucketCnt; i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> b.tophash[i] != top &#123;</span><br><span class="line">				<span class="keyword">if</span> b.tophash[i] == emptyRest &#123;</span><br><span class="line">					<span class="keyword">break</span> bucketloop</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			k := add(unsafe.Pointer(b), dataOffset+i*<span class="keyword">uintptr</span>(t.keysize))</span><br><span class="line">			<span class="keyword">if</span> alg.equal(key, k) &#123;</span><br><span class="line">				v := add(unsafe.Pointer(b), dataOffset+bucketCnt*<span class="keyword">uintptr</span>(t.keysize)+i*<span class="keyword">uintptr</span>(t.valuesize))</span><br><span class="line">				<span class="keyword">return</span> v</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> unsafe.Pointer(&amp;zeroVal[<span class="number">0</span>])</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="range访问"><a href="#range访问" class="headerlink" title="range访问"></a>range访问</h4><h4 id="写入"><a href="#写入" class="headerlink" title="写入"></a>写入</h4><p>当形如 <code>hash[k]</code> 的表达式出现在赋值符号左侧时，该表达式也会在编译期间转换成调用 <code>runtime.mapassign</code> 函数，该函数与 <code>runtime.mapaccess1</code> 比较相似，我们将该其分成几个部分分析，首先是函数会根据传入的键拿到对应的哈希和桶：</p>
+<figure class="highlight go"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">mapassign</span><span class="params">(t *maptype, h *hmap, key unsafe.Pointer)</span> <span class="title">unsafe</span>.<span class="title">Pointer</span></span> &#123;</span><br><span class="line">	alg := t.key.alg</span><br><span class="line">	hash := alg.hash(key, <span class="keyword">uintptr</span>(h.hash0))</span><br><span class="line"></span><br><span class="line">	h.flags ^= hashWriting</span><br><span class="line"></span><br><span class="line">again:</span><br><span class="line">	bucket := hash &amp; bucketMask(h.B)</span><br><span class="line">	b := (*bmap)(unsafe.Pointer(<span class="keyword">uintptr</span>(h.buckets) + bucket*<span class="keyword">uintptr</span>(t.bucketsize)))</span><br><span class="line">	top := tophash(hash)</span><br></pre></td></tr></table></figure>
+<p>通过遍历比较桶中存储的 tophash 和键的哈希，如果找到了相同结果就会获取目标位置的地址并返回，其中<code>inserti</code> 表示目标元素的在桶中的索引，insertk 和 val 分别表示键值对的地址，获得目标地址之后会直接通过算术计算进行寻址获得键值对<code>k</code>和<code>val</code>：</p>
+<h4 id="扩容"><a href="#扩容" class="headerlink" title="扩容"></a>扩容</h4><h4 id="删除"><a href="#删除" class="headerlink" title="删除"></a>删除</h4>]]></content>
+      <categories>
+        <category>go</category>
+      </categories>
+      <tags>
+        <tag>go</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>理解Go语言数组和切片</title>
     <url>/go/go-slice-array/</url>
     <content><![CDATA[<blockquote>
 <p>数组和切片是Go语言中常见的数据结构，很多刚刚使用Go的开发者往往会混淆这两个概念，数组作为最常见的集合在编程语言中是非常重要的，除了数组之外，Go 语言引入了另一个概念 — 切片，切片与数组有一些类似，但是它们的不同之处导致使用上会产生巨大的差别。我个人对于算法专项使用Go语言来进行练习，因此只涉及Go语言的部分实现和原理。</p>
