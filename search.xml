@@ -310,6 +310,8 @@
 <blockquote>
 <p>PS: 今天在面试中被要求手写一个通用连接池，紧张之下表现的一塌糊涂，回来之后查缺补漏，增补记录以作后续提成</p>
 </blockquote>
+<a id="more"></a>
+
 <h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><h3 id="什么是连接池"><a href="#什么是连接池" class="headerlink" title="什么是连接池"></a>什么是连接池</h3><ul>
 <li>顾名思义是一个池子</li>
 <li>池子里面存放有限数量即时可用的连接，减少创建连接和关闭连接的时间</li>
